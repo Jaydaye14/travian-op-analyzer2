@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d0f0a">
+<meta name="description" content="Analyseur d'opérations offensives Travian Legends — temps de trajet, heure d'envoi, Place de Tournois">
+<title>Travian Op Analyzer</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f0a;
+  --bg2: #131509;
+  --bg3: #191c0e;
+  --border: rgba(180,160,80,0.18);
+  --border2: rgba(180,160,80,0.35);
+  --gold: #c8a84b;
+  --gold2: #e8c96a;
+  --red: #c0392b;
+  --red2: #e74c3c;
+  --green: #2ecc71;
+  --amber: #e67e22;
+  --text: #d4c9a0;
+  --text2: #8a8070;
+  --text3: #5a5448;
+  --card: #111308;
+  --input-bg: #0d0f0a;
+  --shadow: 0 4px 24px rgba(0,0,0,0.6);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 16px;
+  min-height: 100vh;
+  font-weight: 300;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(200,168,75,0.04) 0%, transparent 70%),
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(180,160,80,0.03) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(180,160,80,0.03) 40px);
+}
+
+/* ---- HEADER ---- */
+header {
+  text-align: center;
+  padding: 36px 20px 24px;
+  position: relative;
+}
+header::after {
+  content: '';
+  display: block;
+  width: 60%;
+  max-width: 400px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 20px auto 0;
+}
+.header-ornament {
+  font-size: 11px;
+  letter-spacing: .3em;
+  color: var(--gold);
+  opacity: .6;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(22px, 5vw, 34px);
+  font-weight: 600;
+  color: var(--gold2);
+  letter-spacing: .05em;
+  line-height: 1.2;
+}
+h1 span {
+  color: var(--red2);
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ---- LAYOUT ---- */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+}
+
+/* ---- TABS ---- */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+  gap: 0;
+}
+.tab {
+  padding: 10px 20px;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: .1em;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  user-select: none;
+}
+.tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.tab:hover:not(.active) { color: var(--text2); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ---- CARDS ---- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+.card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: .15em;
+  color: var(--gold);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  opacity: .8;
+}
+
+/* ---- FORM ELEMENTS ---- */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+@media(max-width:600px) {
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr 1fr; }
+}
+@media(max-width:400px) {
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--text2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  font-family: 'Cinzel', serif;
+}
+.field input, .field select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 9px 12px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: 'Crimson Pro', serif;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+}
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(200,168,75,0.15);
+}
+.field select option { background: #1a1c0f; }
+.field select optgroup { color: var(--gold); font-style: italic; }
+
+/* ---- SEPARATOR ---- */
+.sep {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  margin: 16px 0;
+}
+
+/* ---- BUTTON ---- */
+.btn {
+  width: 100%;
+  padding: 13px 20px;
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  color: var(--gold2);
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: .15em;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(200,168,75,0.08);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s;
+}
+.btn:hover::before { transform: scaleX(1); }
+.btn:hover { box-shadow: 0 0 20px rgba(200,168,75,0.15); }
+.btn:active { transform: scale(.99); }
+.btn-danger {
+  border-color: var(--red2);
+  color: var(--red2);
+}
+.btn-danger::before { background: rgba(231,76,60,0.08); }
+.btn-sm {
+  width: auto;
+  padding: 6px 14px;
+  font-size: 11px;
+}
+
+/* ---- RESULTS ---- */
+#results { display: none; animation: fadeIn .4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.result-banner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media(max-width:500px) { .result-banner { grid-template-columns: 1fr 1fr; } }
+
+.rstat {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 14px;
+  text-align: center;
+}
+.rstat-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--text3);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.rstat-val {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  color: var(--gold2);
+  line-height: 1;
+}
+.rstat-val.danger { color: var(--red2); }
+.rstat-val.warn { color: var(--amber); }
+.rstat-val.ok { color: var(--green); }
+.rstat-sub {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ---- TABLE ---- */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+th {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--gold);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border2);
+  text-align: left;
+  text-transform: uppercase;
+  opacity: .7;
+  white-space: nowrap;
+}
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(180,160,80,0.07);
+  color: var(--text);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(200,168,75,0.03); }
+tr.highlight td { color: var(--gold2); background: rgba(200,168,75,0.05); }
+tr.highlight-red td { color: var(--red2); background: rgba(231,76,60,0.05); }
+
+/* ---- BADGES ---- */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+.badge-gold { background: rgba(200,168,75,0.15); color: var(--gold2); border: 1px solid rgba(200,168,75,0.3); }
+.badge-red  { background: rgba(231,76,60,0.15);  color: var(--red2);  border: 1px solid rgba(231,76,60,0.3); }
+.badge-amber { background: rgba(230,126,34,0.15); color: #f39c12; border: 1px solid rgba(230,126,34,0.3); }
+.badge-gray { background: rgba(90,84,72,0.3); color: var(--text2); border: 1px solid var(--border); }
+.badge-green { background: rgba(46,204,113,0.12); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+
+/* ---- SECTION TITLE ---- */
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  letter-spacing: .12em;
+  color: var(--gold);
+  margin: 24px 0 12px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border2), transparent);
+}
+
+/* ---- HISTORY ---- */
+.history-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color .2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.history-item:hover { border-color: var(--border2); }
+.history-item .hi-title { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold); }
+.history-item .hi-meta { font-size: 13px; color: var(--text2); font-style: italic; }
+.history-item .hi-delete { color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 6px; transition: color .2s; line-height: 1; }
+.history-item .hi-delete:hover { color: var(--red2); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-style: italic;
+  font-size: 15px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+}
+
+/* ---- HINT ---- */
+.hint {
+  font-size: 13px;
+  color: var(--text3);
+  font-style: italic;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+/* ---- TOOLTIP / LEGEND ---- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; color: var(--text2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ---- FOOTER ---- */
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text3);
+  font-size: 12px;
+  font-style: italic;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+/* ---- TOURNAMENT TABLE SPECIFIC ---- */
+.pt-match { color: var(--gold2) !important; font-weight: 600; }
+.pt-possible { color: var(--amber) !important; }
+
+/* ---- SEND TIME CARD ---- */
+.send-range {
+  background: rgba(192,57,43,0.08);
+  border: 1px solid rgba(192,57,43,0.25);
+  border-radius: 3px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.send-range-title {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--red2);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.send-range-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.send-time-pill {
+  background: rgba(192,57,43,0.12);
+  border: 1px solid rgba(192,57,43,0.2);
+  border-radius: 2px;
+  padding: 4px 10px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: monospace;
+}
+
+/* ---- ACCORDION ---- */
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+.accordion-header .chevron {
+  color: var(--text3);
+  transition: transform .2s;
+  font-size: 12px;
+}
+.accordion-header.open .chevron { transform: rotate(180deg); }
+.accordion-body { display: none; margin-top: 14px; }
+.accordion-body.open { display: block; }
+
+/* ---- INSTALL BANNER ---- */
+#install-banner {
+  display: none;
+  background: rgba(200,168,75,0.08);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+#install-banner span { font-size: 14px; color: var(--text2); font-style: italic; }
+#install-banner button {
+  white-space: nowrap;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: .1em;
+  cursor: pointer;
+  border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-ornament">⚔ Travian Legends · frx2 ⚔</div>
+  <h1>Op <span>Analyzer</span></h1>
+  <p class="subtitle">Analyse des opérations offensives adverses</p>
+</header>
+
+<div class="container">
+
+  <div id="install-banner">
+    <span>Installer l'app pour un accès rapide au combat</span>
+    <button id="install-btn">Installer</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="analyze">Analyser</div>
+    <div class="tab" data-tab="history">Historique</div>
+    <div class="tab" data-tab="guide">Guide</div>
+  </div>
+
+  <!-- ===== TAB ANALYZE ===== -->
+  <div class="tab-content active" id="tab-analyze">
+
+    <div class="card">
+      <div class="card-title">Village cible (le tien)</div>
+      <div class="grid2">
+        <div class="field"><label>Coord. X</label><input type="number" id="dx" placeholder="ex: 25" inputmode="numeric"></div>
+        <div class="field"><label>Coord. Y</label><input type="number" id="dy" placeholder="ex: -12" inputmode="numeric"></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="field"><label>Nom du village (optionnel)</label><input type="text" id="def-name" placeholder="ex: Be2 · Capital Égyptienne"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Village attaquant (adverse)</div>
+      <div class="grid2">
+        <div class="field"><label>Coord. X</label><input type="number" id="ax" placeholder="ex: -30" inputmode="numeric"></div>
+        <div class="field"><label>Coord. Y</label><input type="number" id="ay" placeholder="ex: 18" inputmode="numeric"></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="field"><label>Nom du village adverse (optionnel)</label><input type="text" id="att-name" placeholder="ex: Village adverse #1"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Timing de l'attaque</div>
+      <div class="grid2">
+        <div class="field"><label>Date d'arrivée</label><input type="date" id="arr-date"></div>
+        <div class="field"><label>Heure d'arrivée</label><input type="time" id="arr-time" step="1" placeholder="HH:MM:SS"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Renseignements adverses</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Civilisation</label>
+          <select id="civ">
+            <option value="all">Toutes / Inconnue</option>
+            <option value="hun">Huns</option>
+            <option value="gaulois">Gaulois</option>
+            <option value="romain">Romains</option>
+            <option value="germain">Germains (Teutons)</option>
+            <option value="spartiate">Spartiates</option>
+            <option value="egyptien">Égyptiens</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Type d'attaque</label>
+          <select id="att-type">
+            <option value="raid">Raid (ferme)</option>
+            <option value="attack">Attaque normale</option>
+            <option value="siege">Siège / Catapultes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="analyze()">⚔ &nbsp; Analyser l'opération</button>
+
+    <!-- RESULTS -->
+    <div id="results">
+      <div class="section-title">Résultats</div>
+
+      <div class="result-banner">
+        <div class="rstat">
+          <div class="rstat-label">Distance</div>
+          <div class="rstat-val" id="r-dist">—</div>
+          <div class="rstat-sub">cases (Chebyshev)</div>
+        </div>
+        <div class="rstat">
+          <div class="rstat-label">Troupes rapides</div>
+          <div class="rstat-val warn" id="r-travel-fast">—</div>
+          <div class="rstat-sub">temps trajet min</div>
+        </div>
+        <div class="rstat">
+          <div class="rstat-label">Troupes lentes</div>
+          <div class="rstat-val" id="r-travel-slow">—</div>
+          <div class="rstat-sub">temps trajet max</div>
+        </div>
+      </div>
+
+      <!-- Send times -->
+      <div class="send-range">
+        <div class="send-range-title">⚠ Fenêtre d'envoi estimée (sans PT)</div>
+        <div class="send-range-times" id="r-send-times"></div>
+      </div>
+
+      <!-- Tournament -->
+      <div class="card">
+        <div class="accordion-header" onclick="toggleAcc(this)">
+          <div class="card-title" style="margin:0">Estimation Place de Tournois</div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div id="tournament-result"></div>
+          <p class="hint">La PDT ajoute +20% de vitesse par niveau. Un envoi à heure ronde (HH:00 ou HH:30:00) avec un multiplicateur cohérent indique le niveau probable.</p>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#c8a84b"></div>Match très probable</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div>Match possible</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#5a5448"></div>Heure non ronde</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Troop table -->
+      <div class="card">
+        <div class="accordion-header" onclick="toggleAcc(this)">
+          <div class="card-title" style="margin:0">Troupes compatibles</div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div class="table-wrap" id="troop-table"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-danger" style="margin-top:8px" onclick="saveToHistory()">📜 &nbsp; Sauvegarder dans l'historique</button>
+    </div>
+
+  </div>
+
+  <!-- ===== TAB HISTORY ===== -->
+  <div class="tab-content" id="tab-history">
+    <div class="card">
+      <div class="card-title">Opérations analysées</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB GUIDE ===== -->
+  <div class="tab-content" id="tab-guide">
+    <div class="card">
+      <div class="card-title">Comment utiliser</div>
+      <div style="line-height:1.8; font-size:15px; color: var(--text)">
+        <p style="margin-bottom:14px"><strong style="color:var(--gold)">1. Coordonnées</strong> — Entre les coordonnées XY de ton village cible et du village attaquant (visible dans les détails de l'attaque entrante).</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--gold)">2. Timing</strong> — L'heure d'arrivée exacte (avec les secondes si possible) est la clé de la déduction PDT.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--gold)">3. Civilisation</strong> — Si tu connais la civilisation adverse (profil joueur, rapports précédents), sélectionne-la pour affiner l'analyse.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--gold)">4. PDT</strong> — L'outil calcule pour chaque troupe l'heure d'envoi. Si cette heure tombe à HH:00:00 ou HH:30:00, le joueur a probablement utilisé une PDT de niveau X.</p>
+      </div>
+      <div class="sep"></div>
+      <div class="card-title">Formules</div>
+      <div style="line-height:1.8; font-size:15px; color: var(--text)">
+        <p><strong style="color:var(--gold)">Distance Chebyshev</strong> = max(|ΔX|, |ΔY|)</p>
+        <p><strong style="color:var(--gold)">Vitesse effective</strong> = vitesse_base × vitesse_serveur (×2) × multiplicateur_PDT</p>
+        <p><strong style="color:var(--gold)">Temps de trajet</strong> = distance / vitesse_effective</p>
+        <p><strong style="color:var(--gold)">Multiplicateur PDT</strong> = 1.2<sup>niveau</sup> (niv.1 = ×1.2 · niv.5 = ×2.49 · niv.10 = ×6.19)</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Vitesses de base (toutes civ · cases/heure)</div>
+      <div class="table-wrap">
+        <table id="speed-ref-table"></table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Travian Op Analyzer · frx2 · NoGodNoMaster · Alliance N-A</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
